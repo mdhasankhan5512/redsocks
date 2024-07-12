@@ -17,4 +17,5 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 echo -e "${GREEN}powered by md hasan khan${NC}"
 sleep 5
+cd /
 rm -- "$0"
