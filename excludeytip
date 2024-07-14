@@ -1,0 +1,105 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+
+START=90
+INTERFACE=br-lan
+PORT=1337
+
+# check if configuration exists
+[ -e "/etc/redsocks.conf" ] || exit 0
+
+# List of YouTube IP addresses to exclude from redsocks
+YOUTUBE_IPS="\
+  172.217.0.0/16 \
+  173.194.0.0/16 \
+  74.125.0.0/16 \
+  216.239.32.0/19 \
+  108.177.0.0/17 \
+  142.250.0.0/15 \
+  192.178.0.0/15 \
+  209.85.128.0/17 \
+  64.233.160.0/19 \
+  66.102.0.0/20 \
+  66.249.80.0/20 \
+  72.14.192.0/18 \
+  74.125.0.0/16 \
+  216.58.192.0/19 \
+  209.85.0.0/16"
+
+iptable_start() {
+    /bin/echo -n "running redsocks iptables ..."
+
+    # Run iptable commands
+    iptables -t nat -N REDSOCKS
+
+    # Exclude private networks and YouTube IP addresses
+    iptables -t nat -A REDSOCKS -d 0.0.0.0/8 -j RETURN
+    iptables -t nat -A REDSOCKS -d 10.0.0.0/8 -j RETURN
+    iptables -t nat -A REDSOCKS -d 127.0.0.0/8 -j RETURN
+    iptables -t nat -A REDSOCKS -d 169.254.0.0/16 -j RETURN
+    iptables -t nat -A REDSOCKS -d 172.16.0.0/12 -j RETURN
+    iptables -t nat -A REDSOCKS -d 192.168.0.0/16 -j RETURN
+    iptables -t nat -A REDSOCKS -d 224.0.0.0/4 -j RETURN
+    iptables -t nat -A REDSOCKS -d 240.0.0.0/4 -j RETURN
+
+    for IP in $YOUTUBE_IPS; do
+        iptables -t nat -A REDSOCKS -d $IP -j RETURN
+    done
+
+    iptables -t nat -A REDSOCKS -p tcp -j REDIRECT --to-ports ${PORT}
+
+    iptables -t nat -A PREROUTING -i ${INTERFACE} -p tcp -j REDSOCKS
+
+    iptables -A INPUT -i br-lan -p tcp --dport ${PORT} -j ACCEPT
+
+    /bin/echo " done"
+}
+
+iptable_stop() {
+    /bin/echo -n "cleaning redsocks iptables ..."
+
+    # Run iptable commands
+    iptables -t nat -F REDSOCKS
+    iptables -t nat -F PREROUTING
+    iptables -t nat -F POSTROUTING
+    iptables -F INPUT
+    iptables -F FORWARD
+    iptables -t nat -X REDSOCKS
+
+    /bin/echo " done"
+}
+
+start() {
+    if [ -e "/var/run/redsocks.pid" ]; then
+        echo "redsocks is already running"
+        exit 0
+    fi
+
+    /bin/echo -n "running redsocks ..."
+
+    # startup the safety-wrapper for the daemon
+    /usr/sbin/redsocks -p /var/run/redsocks.pid
+
+    /bin/echo " done"
+    iptable_start
+}
+
+stop() {
+    if [ ! -e "/var/run/redsocks.pid" ]; then
+        echo "redsocks is not running"
+        exit 0
+    fi
+
+    /bin/echo -n "stopping redsocks ..."
+
+    # kill the process
+    /bin/kill $(cat /var/run/redsocks.pid)
+    rm /var/run/redsocks.pid
+
+    echo " done"
+    iptable_stop
+
+    /bin/echo -n "restarting firewall ..."
+    /etc/init.d/firewall restart &> /dev/null
+    /bin/echo " done"
+}
