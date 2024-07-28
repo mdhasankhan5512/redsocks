@@ -10,7 +10,7 @@ PORT=1337
 
 # List of Bangladeshi IP address ranges to exclude from redsocks
 BD_IPS="\
-103.106.238.74
+103.106.238.74"
 
 iptable_start() {
     /bin/echo -n "running redsocks iptables ..."
