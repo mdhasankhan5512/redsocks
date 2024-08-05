@@ -9,7 +9,7 @@ PORT=1337
 [ -e "/etc/redsocks.conf" ] || exit 0
 
 # List of Bangladeshi IP address ranges to exclude from redsocks
-BD_IPS="103.159.128.0/24
+BD_IPS="103.159.128.0/24 \
 103.122.143.0/24 \
 103.177.246.0/24 \
 103.106.238.0/24 \
