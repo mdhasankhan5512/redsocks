@@ -5,7 +5,7 @@ opkg install redsocks iptables-nft iptables-mod-nat-extra
 sleep 2
 rm /etc/init.d/redsocks
 rm /etc/redsocks.conf
-https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/redsocks
+wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/redsocks
 sleep 2
 # mv exlcudetiktok redsocks
 wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/main/redsocks.conf
