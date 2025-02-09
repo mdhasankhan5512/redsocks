@@ -12,8 +12,20 @@ wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/main/redsocks.co
 mv redsocks /etc/init.d/
 chmod +x /etc/init.d/redsocks
 mv redsocks.conf /etc/
-echo "edit the redsocks.conf file of /etc/ directory and update the proxy details"
 sleep 2
+wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/redsocks.lua
+sleep 1
+mv redsocks.lua /usr/lib/lua/luci/model/cbi/
+sleep 1
+wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/controllar.lua
+sleep 1
+mv controllar.lua /usr/lib/lua/luci/controller/redsocks.lua 
+sleep 1
+wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/update_redsocks.sh
+mv update_redsocks.sh /root/
+chmod +x /root/redsocks.sh
+/etc/init.d/rpcd restart
+echo "after saving and applying proxy details don't forget to click Update Redsocks Config"
 # Display the text in green
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
