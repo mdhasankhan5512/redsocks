@@ -1,10 +1,15 @@
-local m, s, btn_start, btn_stop, btn_restart, btn_disable, btn_enable, status
+local m, s, btn_start, btn_stop, btn_restart, btn_disable, btn_enable, btn_update, status
 
-m = Map("redsocks", "Redsocks Configuration", "Configure Redsocks proxy settings.")
+m = Map("redsocks", "Redsocks Configuration", "After saving and applying config click the button Click TO Update Redsocks Config to update the config")
 
 s = m:section(TypedSection, "redsocks", "Redsocks Proxy")
 s.addremove = false
 s.anonymous = true
+
+local instruction = s:option(DummyValue, "instruction", "")
+instruction.rawhtml = true
+instruction.default = "<h1 style='color: green; font-weight: bold;'>After saving and applying config, click the button below <i>Update Redsocks Config</i> to update the redsocks config in the file and then run it</h1>"
+
 
 -- Redsocks status button at the top
 status = s:option(DummyValue, "_status", "Redsocks Status")
@@ -23,13 +28,52 @@ function status.cfgvalue(self, section)
     end
 end
 
--- Server Address, Port, and Username
-s:option(Value, "host", "Proxy ip").datatype = "ipaddr"
-s:option(Value, "port", "Proxy port").datatype = "port"
-s:option(Value, "username", "Username")
+-- Server Address, Port
+s:option(Value, "host", "Server Address").datatype = "ipaddr"
+s:option(Value, "port", "Server Port").datatype = "port"
 
-pass = s:option(Value, "password", "Password")
-pass.password = true
+-- Authentication checkbox
+local enable_auth = s:option(Flag, "authentication", "Enable Authentication", "Check this box to enable authentication for Redsocks.")
+enable_auth.default = 0  -- Disabled by default
+
+-- Username and Password fields, initially hidden
+local username = s:option(Value, "username", "Username")
+username:depends("authentication", 1)  -- Show when authentication is enabled
+username.hidden = true  -- Initially hidden
+
+local password = s:option(Value, "password", "Password")
+password.password = true
+password:depends("authentication", 1)  -- Show when authentication is enabled
+password.hidden = true  -- Initially hidden
+
+-- Add JavaScript code to toggle the visibility of username and password fields based on the checkbox status
+m.on_init = function(self)
+    local js_code = [[
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function() {
+                var authCheckbox = document.querySelector('input[name="authentication"]');
+                var usernameField = document.querySelector('input[name="username"]');
+                var passwordField = document.querySelector('input[name="password"]');
+                
+                // Function to toggle the visibility of fields based on checkbox status
+                authCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        usernameField.closest("tr").style.display = "";
+                        passwordField.closest("tr").style.display = "";
+                    } else {
+                        usernameField.closest("tr").style.display = "none";
+                        passwordField.closest("tr").style.display = "none";
+                    }
+                });
+                
+                // Trigger the change event on page load to set initial visibility
+                authCheckbox.dispatchEvent(new Event('change'));
+            });
+        </script>
+    ]]
+
+    luci.http.write(js_code)
+end
 
 -- Start button
 btn_start = s:option(Button, "start", "Start", "Start Redsocks service.")
@@ -90,6 +134,19 @@ else
     btn_disable.rawhtml = true
     btn_disable.default = "<b><span style='color: red;'>Disabled</span></b>"
 end
+
+-- Add Update Redsocks button
+btn_update = s:option(Button, "update", "Update Redsocks Config", "Click to update Redsocks configuration.")
+btn_update.inputstyle = "apply"
+function btn_update.write(self, section)
+    os.execute("sh /root/update_redsocks.sh &")
+    
+    -- Optionally refresh the page after executing the script
+    luci.sys.call("sleep 1")  -- sleep to allow update process to complete
+    luci.http.redirect(luci.dispatcher.build_url("admin/services/redsocks"))
+end
+
+-- Add instruction text with green color, bold, H1 size
 
 -- Bottom hyperlinks with green color, italic font, H1 size, and Facebook profile links
 local footer = s:option(DummyValue, "footer", "")
