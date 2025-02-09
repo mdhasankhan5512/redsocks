@@ -9,6 +9,8 @@ PORT=1337
 [ -e "/etc/redsocks.conf" ] || exit 0
 
 iptable_start() {
+
+
         # Run iptable commands
         iptables -t nat -N REDSOCKS
 
@@ -22,11 +24,17 @@ iptable_start() {
         iptables -t nat -A REDSOCKS -d 240.0.0.0/4 -j RETURN
 
         iptables -t nat -A REDSOCKS -p tcp -j REDIRECT --to-ports ${PORT}
+
         iptables -t nat -A PREROUTING -i ${INTERFACE} -p tcp -j REDSOCKS
+
         iptables -A INPUT -i br-lan -p tcp --dport ${PORT} -j ACCEPT
+
+   
 }
 
 iptable_stop() {
+      
+
         # Run iptable commands
         iptables -t nat -F REDSOCKS
         iptables -t nat -F PREROUTING
@@ -34,26 +42,34 @@ iptable_stop() {
         iptables -F INPUT
         iptables -F FORWARD
         iptables -t nat -X REDSOCKS
+
+
 }
 
 start() {
         if [ -e "/var/run/redsocks.pid" ]; then
+                echo "redsocks is already running"
                 exit 0
         fi
 
         # startup the safety-wrapper for the daemon
         /usr/sbin/redsocks -p /var/run/redsocks.pid
+
         iptable_start
 }
 
 stop() {
         if [ ! -e "/var/run/redsocks.pid" ]; then
+                echo "redsocks is not running"
                 exit 0
         fi
 
         # kill the process
         /bin/kill $(cat /var/run/redsocks.pid)
         rm /var/run/redsocks.pid
+
         iptable_stop
+
+        /bin/echo -n "restarting firewall ..."
         /etc/init.d/firewall restart &> /dev/null
 }
