@@ -13,14 +13,14 @@ mv redsocks /etc/init.d/
 chmod +x /etc/init.d/redsocks
 mv redsocks.conf /etc/
 sleep 2
-cat <<EOF > /etc/config/custom_ssh_tunnel
-config tunnel 'settings'
-    option host '206.189.80.210'
-    option port '443'
-    option username 'racevpn.com-alyan26'
-    option password 'H5512552'
-    option sni 'cdn.snapchat.com'
-    option local_port '8080'
+cat <<EOF > /etc/config/redsocks
+config redsocks 'main'
+	option enabled '1'
+	option host '127.0.0.1'
+	option port '1080'
+	option authentication '1'
+	option username 'test'
+	option password 'test'
 EOF
 wget https://raw.githubusercontent.com/mdhasankhan5512/redsocks/refs/heads/main/redsocks.lua
 sleep 1
